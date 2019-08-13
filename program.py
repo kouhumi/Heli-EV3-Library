@@ -5,7 +5,7 @@ Program Your Robot. Complete The Task.
 Write Your Program Below
 '''
 a = motor('A')
-print('I\'m testing Github.')
+b = sensor('1')
 '''
 Write Your Program Above
 Your Program is Awesome :)

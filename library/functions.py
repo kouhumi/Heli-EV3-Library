@@ -67,44 +67,31 @@ def motor(port):
     return m
 
 
-def sensor(sensor_type, port = None): # plug in the default sensor port.
-    # normalize sensor port.
-    if port == 1 or port == '1':
-        port = INPUT_1
-    elif port == 2 or port == '2':
-        port = INPUT_2
-    elif port == 3 or port == '3':
-        port = INPUT_3
-    elif port == 4 or port == '4':
-        port = INPUT_4
-    elif port != None:
-        print('Wrong sensor port. (Correct: 1/2/3/4)')
-        delay(5)
+def sensor(port):
+    # validate sensor port.
+    try:
+        port = config.sensor_port_synonyms[port]
+    except KeyError as e:
+        print('port:', e, 'is not available. (Correct: \'1\'/\'2\'/\'3\'/\'4\')')
+        time.sleep(5)
         return None
 
-    # normalize sensor type and plug it in.
-    if sensor_type == 's' or sensor_type == 'S' or sensor_type == 'sonar' or sensor_type == 'Sonar' or sensor_type == 'ultrasonic' or sensor_type == 'Ultrasonic':
-        if port == None:
-            s = UltrasonicSensor()
-        else:
+    # try plugging in the sensor as each of all sensor types.
+    try:
+        s = TouchSensor(port)
+    except Exception:
+        try:
             s = UltrasonicSensor(port)
-        return s
-    elif sensor_type == 't' or sensor_type == 'T' or sensor_type == 'touch' or sensor_type == 'Touch':
-        if port == None:
-            s = TouchSensor()
-        else:
-            s = TouchSensor(port)
-        return s
-    elif sensor_type == 'c' or sensor_type == 'C' or sensor_type == 'color' or sensor_type == 'Color':
-        if port == None:
-            s = ColorSensor()
-        else:
-            s = ColorSensor(port)
-        return s
-    else:
-        print('Wrong sensor type. (Correct: \'sonar/\'touch)')
-        delay(5)
-        return None
+        except Exception:
+            try:
+                s = ColorSensor(port)
+            except Exception:
+                print(port, 'is not connected. Check the sensor, cable and the brick.')
+                time.sleep(5)
+                return None
+
+    return s
+
 
 def run(motor, speed, seconds = None): # run the motor forever.
     if seconds == None:
@@ -137,6 +124,9 @@ def run(motor, speed, seconds = None): # run the motor forever.
             motor[i].run_forever(speed_sp = speed[i])
         time.sleep(seconds)
         for i in range(len(motor)):
+            motor[i].run_forever(speed_sp = sgn(speed[i]) * -700)
+        time.sleep(0.02)
+        for i in range(len(motor)):
             motor[i].stop()
 
 def encoder_run(motor, speed, distance):
@@ -166,7 +156,7 @@ def stop(motor):
 def get(sensor):
     if isinstance(sensor, (UltrasonicSensor, TouchSensor, ColorSensor)):
         if isinstance(sensor, (ColorSensor)):
-            return colors[sensor.color]
+            return config.colors[sensor.color]
         else:
             return sensor.value()
     else:
